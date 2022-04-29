@@ -1,6 +1,6 @@
 # Snapdrop 
 
-原版是根据相同ip分配房间，但是ipv6下，同一局域网的ip也可能不同，故修改兼容。<br>
+原版是根据相同公网ip分配房间，但是ipv6下，同一局域网的公网ip也可能不同，故修改兼容。<br>
 另外添加了room功能，点击页脚输入room id可与对应roomid的客户端相互传输。
 
 The original version allocates rooms according to the same IP, but under IPv6, the IP of the same LAN may be different, so I fixed for it.
