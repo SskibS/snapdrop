@@ -210,22 +210,24 @@ class Peer {
         //    this.ip = '127.0.0.1';
         //}
         if (/\?room=./.test(request.url)) {
-            this.ip = decodeURIComponent(request.url.match(/\?room=(.+)/i)[1]);
+            this.ip =  "room-" + decodeURIComponent(request.url.match(/\?room=(.+)/i)[1]);
         } else {
-            if (request.headers['x-forwarded-for']) {
+            var xForwarded = request.headers['x-forwarded-for'];
+            if (xForwarded) {
                 //console.log('x-forwarded-for:',request.headers['x-forwarded-for']);
-                var ip = /\w{1,4}[\.\:]\w{1,4}[\.\:]\w{1,4}[\.\:]\w{1,4}/;
+                var ipReg = /\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}/;
                 //this.ip = request.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
-                this.ip = request.headers['x-forwarded-for'].match(ip)[0];
+                this.ip = ipReg.test(xForwarded)?xForwarded.match(ipReg)[0]:xForwarded.split(/\s*,\s*/)[0];
             } else {
                 //console.log('connection.remoteAddress:',request.connection.remoteAddress);
                 this.ip = request.connection.remoteAddress;
             }
             // IPv4 and IPv6 use different values to refer to localhost
             if (this.ip == '::1' || this.ip == '::ffff:127.0.0.1') {
-                this.ip = '127.0.0.1';
+                this.ip = 'local';
             }
         }
+        //console.log(this.ip);
         if (/^((192\.168\.)|fe80|(10\.)|(172\.16\.))/.test(this.ip)) this.ip = "local";
     }
 
