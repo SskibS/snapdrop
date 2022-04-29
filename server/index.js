@@ -10,6 +10,19 @@ process.on('SIGTERM', () => {
   console.info("SIGTERM Received, exiting...")
   process.exit(0)
 })
+// Handle APP ERRORS
+process.on('uncaughtException', (error, origin) => {
+    console.log('----- Uncaught exception -----')
+    console.log(error)
+    console.log('----- Exception origin -----')
+    console.log(origin)
+})
+process.on('unhandledRejection', (reason, promise) => {
+    console.log('----- Unhandled Rejection at -----')
+    console.log(promise)
+    console.log('----- Reason -----')
+    console.log(reason)
+})
 
 const parser = require('ua-parser-js');
 const { uniqueNamesGenerator, animals, colors } = require('unique-names-generator');
@@ -81,21 +94,27 @@ class SnapdropServer {
         // if room doesn't exist, create it
         if (!this._rooms[peer.ip]) {
             this._rooms[peer.ip] = {};
+            return;
         }
 
         // notify all other peers
         for (const otherPeerId in this._rooms[peer.ip]) {
             const otherPeer = this._rooms[peer.ip][otherPeerId];
-            this._send(otherPeer, {
-                type: 'peer-joined',
-                peer: peer.getInfo()
-            });
+            if (otherPeer != peer.id) {
+                this._send(otherPeer, {
+                    type: 'peer-joined',
+                    peer: peer.getInfo()
+                });
+            }
         }
 
         // notify peer about the other peers
         const otherPeers = [];
         for (const otherPeerId in this._rooms[peer.ip]) {
-            otherPeers.push(this._rooms[peer.ip][otherPeerId].getInfo());
+            const otherPeer = this._rooms[peer.ip][otherPeerId];
+            if (otherPeer != peer.id) {
+                otherPeers.push(otherPeer.getInfo());
+            }
         }
 
         this._send(peer, {
@@ -181,15 +200,33 @@ class Peer {
     }
 
     _setIP(request) {
-        if (request.headers['x-forwarded-for']) {
-            this.ip = request.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
-        } else {
-            this.ip = request.connection.remoteAddress;
-        }
+        //if (request.headers['x-forwarded-for']) {
+        //    this.ip = request.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
+        //} else {
+        //    this.ip = request.connection.remoteAddress;
+        //}
         // IPv4 and IPv6 use different values to refer to localhost
-        if (this.ip == '::1' || this.ip == '::ffff:127.0.0.1') {
-            this.ip = '127.0.0.1';
+        //if (this.ip == '::1' || this.ip == '::ffff:127.0.0.1') {
+        //    this.ip = '127.0.0.1';
+        //}
+        if (/\?room=./.test(request.url)) {
+            this.ip = decodeURIComponent(request.url.match(/\?room=(.+)/i)[1]);
+        } else {
+            if (request.headers['x-forwarded-for']) {
+                //console.log('x-forwarded-for:',request.headers['x-forwarded-for']);
+                var ip = /\w{1,4}[\.\:]\w{1,4}[\.\:]\w{1,4}[\.\:]\w{1,4}/;
+                //this.ip = request.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
+                this.ip = request.headers['x-forwarded-for'].match(ip)[0];
+            } else {
+                //console.log('connection.remoteAddress:',request.connection.remoteAddress);
+                this.ip = request.connection.remoteAddress;
+            }
+            // IPv4 and IPv6 use different values to refer to localhost
+            if (this.ip == '::1' || this.ip == '::ffff:127.0.0.1') {
+                this.ip = '127.0.0.1';
+            }
         }
+        if (/^((192\.168\.)|fe80|(10\.)|(172\.16\.))/.test(this.ip)) this.ip = "local";
     }
 
     _setPeerId(request) {

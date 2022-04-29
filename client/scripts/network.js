@@ -58,7 +58,7 @@ class ServerConnection {
         // hack to detect if deployment or development environment
         const protocol = location.protocol.startsWith('https') ? 'wss' : 'ws';
         const webrtc = window.isRtcSupported ? '/webrtc' : '/fallback';
-        const url = protocol + '://' + location.host + location.pathname + 'server' + webrtc;
+        const url = protocol + '://' + location.host + location.pathname + 'server' + webrtc + location.search;
         return url;
     }
 
@@ -186,7 +186,7 @@ class Peer {
     }
 
     _onChunkReceived(chunk) {
-        if(!chunk.byteLength) return;
+        if(!(chunk.byteLength || chunk.size)) return;
         
         this._digester.unchunk(chunk);
         const progress = this._digester.progress;

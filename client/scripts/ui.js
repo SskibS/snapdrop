@@ -225,6 +225,31 @@ class Dialog {
     }
 }
 
+class JoinRoomDialog extends Dialog {
+    constructor() {
+        super('joinRoomDialog');
+        this.qrcode = new QRCode(document.getElementById("qrcode"), {
+            width: 240,
+            height: 240
+        });
+        this.$text = this.$el.querySelector('#roomInput');
+        this.$text.value = decodeURIComponent(location.search.replace(/\?room=/i, ''));
+        this.$text.addEventListener('input', _ => this._makeCode());
+        this._makeCode();
+        this.$el.querySelector('form').addEventListener('submit', e => this._join(e));
+        document.querySelector('footer').addEventListener('click', _ => this.show());
+    }
+
+    _join(e) {
+        e.preventDefault();
+        window.location.href = location.protocol + '//' + location.host + '?room=' + encodeURIComponent(this.$text.value);
+    }
+
+    _makeCode() {
+        this.qrcode.makeCode(location.protocol + '//' + location.host + '?room=' + encodeURIComponent(this.$text.value));
+    }
+}
+
 class ReceiveDialog extends Dialog {
 
     constructor() {
@@ -524,6 +549,7 @@ class Snapdrop {
         const peers = new PeersManager(server);
         const peersUI = new PeersUI();
         Events.on('load', e => {
+            const joinRoomDialog = new JoinRoomDialog();
             const receiveDialog = new ReceiveDialog();
             const sendTextDialog = new SendTextDialog();
             const receiveTextDialog = new ReceiveTextDialog();

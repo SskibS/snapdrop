@@ -120,7 +120,16 @@ body {
     font-weight: 400;
     line-height: 20px;
 }
-
+#qrcode {
+    width: 240px;
+    height: 240px;
+    margin: 10px auto;
+    padding: 5px;
+    background-color: white;
+}
+footer {
+    cursor: pointer;
+}
 .font-body2 {
     font-size: 12px;
     line-height: 18px;
