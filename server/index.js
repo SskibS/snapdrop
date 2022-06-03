@@ -94,13 +94,14 @@ class SnapdropServer {
         // if room doesn't exist, create it
         if (!this._rooms[peer.ip]) {
             this._rooms[peer.ip] = {};
+            this._rooms[peer.ip][peer.id] = peer
             return;
         }
 
         // notify all other peers
         for (const otherPeerId in this._rooms[peer.ip]) {
             const otherPeer = this._rooms[peer.ip][otherPeerId];
-            if (otherPeer != peer.id) {
+            if (otherPeer.id != peer.id) {
                 this._send(otherPeer, {
                     type: 'peer-joined',
                     peer: peer.getInfo()
@@ -112,7 +113,7 @@ class SnapdropServer {
         const otherPeers = [];
         for (const otherPeerId in this._rooms[peer.ip]) {
             const otherPeer = this._rooms[peer.ip][otherPeerId];
-            if (otherPeer != peer.id) {
+            if (otherPeer.id != peer.id) {
                 otherPeers.push(otherPeer.getInfo());
             }
         }
@@ -212,16 +213,17 @@ class Peer {
         if (/\?room=./.test(request.url)) {
             this.ip =  "room-" + decodeURIComponent(request.url.match(/\?room=(.+)/i)[1]);
         } else {
+            var ipReg = /\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}/;
             var xForwarded = request.headers['x-forwarded-for'];
             if (xForwarded) {
                 //console.log('x-forwarded-for:',request.headers['x-forwarded-for']);
-                var ipReg = /\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}/;
                 //this.ip = request.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
-                this.ip = ipReg.test(xForwarded)?xForwarded.match(ipReg)[0]:xForwarded.split(/\s*,\s*/)[0];
+                this.ip = xForwarded;
             } else {
                 //console.log('connection.remoteAddress:',request.connection.remoteAddress);
                 this.ip = request.connection.remoteAddress;
             }
+            this.ip = ipReg.test(this.ip)?this.ip.match(ipReg)[0]:this.ip.split(/\s*,\s*/)[0];
             // IPv4 and IPv6 use different values to refer to localhost
             if (this.ip == '::1' || this.ip == '::ffff:127.0.0.1') {
                 this.ip = 'local';
