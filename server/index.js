@@ -215,7 +215,10 @@ class Peer {
         } else {
             var ipReg = /\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}[\.\:]\w{0,4}/;
             var xForwarded = request.headers['x-forwarded-for'];
-            if (xForwarded) {
+            var cfip = request.headers['cf-connecting-ip'];
+            if (cfip) {
+                this.ip = cfip;
+            } else if (xForwarded) {
                 //console.log('x-forwarded-for:',request.headers['x-forwarded-for']);
                 //this.ip = request.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
                 this.ip = xForwarded;
